@@ -108,6 +108,15 @@ func (c *TkgClient) SetMachineDeployment(options *SetMachineDeploymentOptions) e
 		}
 		return c.SetNodePoolsForPacificCluster(clusterClient, options)
 	}
+
+	var cluster capi.Cluster
+	if err = clusterClient.GetResource(&cluster, options.ClusterName, options.Namespace, nil, nil); err != nil {
+		return errors.Wrap(err, "Unable to retrieve cluster resource")
+	}
+	if cluster.Spec.Topology != nil {
+		return DoSetMachineDeploymentCC(clusterClient, &cluster, options)
+	}
+
 	return DoSetMachineDeployment(clusterClient, options)
 }
 
@@ -312,6 +321,15 @@ func (c *TkgClient) DeleteMachineDeployment(options DeleteMachineDeploymentOptio
 		}
 		return c.DeleteNodePoolForPacificCluster(clusterClient, options)
 	}
+
+	var cluster capi.Cluster
+	if err = clusterClient.GetResource(&cluster, options.ClusterName, options.Namespace, nil, nil); err != nil {
+		return errors.Wrap(err, "Unable to retrieve cluster resource")
+	}
+	if cluster.Spec.Topology != nil {
+		return DoDeleteMachineDeploymentCC(clusterClient, &cluster, &options)
+	}
+
 	return DoDeleteMachineDeployment(clusterClient, &options)
 }
 
@@ -464,6 +482,14 @@ func (c *TkgClient) GetMachineDeployments(options GetMachineDeploymentOptions) (
 	clusterClient, err := c.getClusterClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to create clusterclient")
+	}
+
+	var cluster capi.Cluster
+	if err = clusterClient.GetResource(&cluster, options.ClusterName, options.Namespace, nil, nil); err != nil {
+		return nil, errors.Wrap(err, "Unable to retrieve cluster resources")
+	}
+	if cluster.Spec.Topology != nil {
+		return DoGetMachineDeploymentsCC(clusterClient, &cluster, &options)
 	}
 
 	return DoGetMachineDeployments(clusterClient, &options)
